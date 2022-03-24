@@ -19,6 +19,7 @@ void logSDLError(std::ostream &os, const std::string &msg, bool fatal)
         exit(1);
     }
 }
+
 void initSDL(SDL_Window *&window, SDL_Renderer *&renderer)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -58,18 +59,28 @@ void waitUntilKeyPressed()
         SDL_Delay(100);
     }
 }
+
+SDL_Texture *Texture(const char *path, SDL_Renderer *ren)
+{
+    SDL_Surface *surface;
+    surface = IMG_Load(path);
+    SDL_Texture *tex;
+    tex = SDL_CreateTextureFromSurface(ren, surface);
+    return tex;
+}
+
 int main(int argc, char *argv[])
 {
     SDL_Window *window;
     SDL_Renderer *renderer;
     initSDL(window, renderer);
-    waitUntilKeyPressed();
+    SDL_RenderClear(renderer);
     SDL_Color color;
-    color.r = 255;
-    color.g = 255;
+    color.r = 250;
+    color.g = 0;
     color.b = 0;
     color.a = 0;
-    Block block(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, color);
+    Block block(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, color, true);
     block.draw(renderer);
     SDL_RenderPresent(renderer); 
     SDL_UpdateWindowSurface(window);
