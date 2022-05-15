@@ -2,13 +2,13 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include "Block.h"
+#include "Controller.h"
 
 using namespace std;
 
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
-const string WINDOW_TITLE = "An Implementation of Code.org Painter";
+const int SCREEN_WIDTH = 1280;
+const int SCREEN_HEIGHT = 720;
+const string WINDOW_TITLE = "Tetris game by FlowerOnStone";
 
 void logSDLError(std::ostream &os, const std::string &msg, bool fatal)
 {
@@ -40,12 +40,30 @@ void initSDL(SDL_Window *&window, SDL_Renderer *&renderer)
 
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
     SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    int imgFlags = IMG_INIT_PNG;
+    if (!(IMG_Init(imgFlags) & imgFlags))
+    {
+        printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+    }
+
+    // Initialize SDL_ttf
+    if (TTF_Init() == -1)
+    {
+        printf("SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
+    }
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+    {
+        printf("SDL_mixer could not initialize! SDL_mixer Error: %s\n", Mix_GetError());
+    }
 }
 
 void quitSDL(SDL_Window *window, SDL_Renderer *renderer)
 {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    Mix_Quit();
+    TTF_Quit();
+    IMG_Quit();
     SDL_Quit();
 }
 void waitUntilKeyPressed()
@@ -60,31 +78,16 @@ void waitUntilKeyPressed()
     }
 }
 
-SDL_Texture *Texture(const char *path, SDL_Renderer *ren)
-{
-    SDL_Surface *surface;
-    surface = IMG_Load(path);
-    SDL_Texture *tex;
-    tex = SDL_CreateTextureFromSurface(ren, surface);
-    return tex;
-}
-
 int main(int argc, char *argv[])
 {
+
     SDL_Window *window;
     SDL_Renderer *renderer;
     initSDL(window, renderer);
-    SDL_RenderClear(renderer);
-    SDL_Color color;
-    color.r = 250;
-    color.g = 0;
-    color.b = 0;
-    color.a = 0;
-    Block block(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 4, color, true);
-    block.draw(renderer);
-    SDL_RenderPresent(renderer); 
-    SDL_UpdateWindowSurface(window);
-    waitUntilKeyPressed();
+    Controller controller(renderer, window, SCREEN_WIDTH, SCREEN_HEIGHT);
+    controller.load();
+    controller.run();
+    controller.free();
     quitSDL(window, renderer);
     return 0;
 }
