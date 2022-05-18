@@ -106,6 +106,7 @@ public:
     Tetromino getShadowTetromino(Tetromino tetromino);
     int genTetromino();
     Tetromino rotate(Tetromino tetromino, int direct);
+    void setHoldTetromino();
     void handleEvent(SDL_Event event);
     void checkTSpin(Tetromino tetromino);
     GameStatus getGameStatus();
@@ -123,6 +124,9 @@ public:
     void textCenterRender(string text, int fontSize, SDL_Color color, SDL_Renderer *renderer, int left, int width, int height);
     void renderBoard(SDL_Renderer *renderer, vector<vector<Block> > &board, int height, int width);
     void renderScoreTable(SDL_Renderer *renderer);
+    void renderMap(SDL_Renderer *renderer);
+    void renderDropTetromino(SDL_Renderer *renderer);
+    void renderPutdownTetromino(SDL_Renderer *renderer);
     void render(SDL_Renderer *renderer);
     void freeBlock();
     ~Tetris();

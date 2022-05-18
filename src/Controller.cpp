@@ -76,6 +76,101 @@ void Controller::load()
     tetris.loadTexture(renderer);
 }
 
+void Controller::renderMenu()
+{
+    startGameTexture.render(NULL, renderer);
+    playButton.render(renderer);
+    helpButton.render(renderer);
+    quitButton.setCenterPos(screenWidth * 3 / 4, screenHeight * 2 / 3 + 100);
+    quitButton.render(renderer);
+    soundButton[soundMode].setCenterPos(screenWidth / 4 + 25, screenHeight * 2 / 3 + 100);
+    soundButton[soundMode].render(renderer);
+    levelButton[level].render(renderer);
+}
+
+void Controller::renderHelp()
+{
+    SDL_Rect rect;
+    backgroundTexture.render(NULL, renderer);
+    rect.w = helpBackgroundTexture.getWidth();
+    rect.h = helpBackgroundTexture.getHeight();
+    rect.x = screenWidth / 2 - rect.w / 2;
+    rect.y = screenHeight / 2 - rect.h / 2;
+    helpBackgroundTexture.render(&rect, renderer);
+    rect.w = controlTexture.getWidth();
+    rect.h = controlTexture.getHeight();
+    rect.x = screenWidth / 2 - rect.w / 2;
+    rect.y = screenHeight / 2 - rect.h / 2 - 200;
+    controlTexture.render(&rect, renderer);
+    okButton.setCenterPos(screenWidth - 150, screenHeight - 50);
+    okButton.render(renderer);
+}
+
+void Controller::renderPlay()
+{
+    SDL_Point pos;
+    backgroundTexture.render(NULL, renderer);
+    tetris.render(renderer);
+    pos = tetris.getNextPos();
+    pauseButton.setCenterPos(pos.x + 4 * BLOCK_SIZE, pos.y + 13 * BLOCK_SIZE);
+    pauseButton.render(renderer);
+    soundButton[soundMode].setCenterPos(pos.x + 4 * BLOCK_SIZE, pos.y + 16 * BLOCK_SIZE);
+    soundButton[soundMode].render(renderer);
+}
+
+void Controller::renderQuit()
+{
+    SDL_Rect rect;
+    backgroundTexture.render(NULL, renderer);
+    tetris.render(renderer);
+    rect.w = buttonBackgroundTexture.getWidth();
+    rect.h = buttonBackgroundTexture.getHeight();
+    rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
+    rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 2;
+    buttonBackgroundTexture.render(&rect, renderer);
+    rect.w = quitGameTexture.getWidth();
+    rect.h = quitGameTexture.getHeight();
+    rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
+    rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 3;
+    quitGameTexture.render(&rect, renderer);
+    okButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 6);
+    okButton.render(renderer);
+    cancelButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 9);
+    cancelButton.render(renderer);
+}
+
+void Controller::renderPause()
+{
+    SDL_Rect rect;
+    backgroundTexture.render(NULL, renderer);
+    tetris.render(renderer);
+    rect.w = buttonBackgroundTexture.getWidth();
+    rect.h = buttonBackgroundTexture.getHeight();
+    rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
+    rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 2;
+    buttonBackgroundTexture.render(&rect, renderer);
+    rect.w = pauseTexture.getWidth();
+    rect.h = pauseTexture.getHeight();
+    rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
+    rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 3;
+    pauseTexture.render(&rect, renderer);
+    resumeButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 6);
+    resumeButton.render(renderer);
+    soundButton[soundMode].setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 8);
+    soundButton[soundMode].render(renderer);
+    quitButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 10);
+    quitButton.render(renderer);
+}
+void Controller::renderGameOver()
+{
+    backgroundTexture.render(NULL, renderer);
+    tetris.textCenterRender("GAME OVER", 72, createColor(255, 0, 0, 0), renderer, 0, screenWidth, 100);
+    tetris.textCenterRender("Score: " + to_string(tetris.getScore()), 36, createColor(255, 255, 0, 0), renderer, 0, screenWidth, 200);
+    tetris.textCenterRender("Lines: " + to_string(tetris.getClearLines()), 36, createColor(255, 255, 0, 0), renderer, 0, screenWidth, 300);
+    replayButton.render(renderer);
+    homeButton.render(renderer);
+}
+
 void Controller::render()
 {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
@@ -85,84 +180,22 @@ void Controller::render()
     switch (gameMode)
     {
     case MAIN_MENU_MODE:
-        startGameTexture.render(NULL, renderer);
-        playButton.render(renderer);
-        helpButton.render(renderer);
-        quitButton.setCenterPos(screenWidth * 3 / 4, screenHeight * 2 / 3 + 100);
-        quitButton.render(renderer);
-        soundButton[soundMode].setCenterPos(screenWidth / 4 + 25, screenHeight * 2 / 3 + 100);
-        soundButton[soundMode].render(renderer);
-        levelButton[level].render(renderer);
+        renderMenu();
         break;
     case HELP_MODE:
-        backgroundTexture.render(NULL, renderer);
-        rect.w = helpBackgroundTexture.getWidth();
-        rect.h = helpBackgroundTexture.getHeight();
-        rect.x = screenWidth / 2 - rect.w / 2;
-        rect.y = screenHeight / 2 - rect.h / 2;
-        helpBackgroundTexture.render(&rect, renderer);
-        rect.w = controlTexture.getWidth();
-        rect.h = controlTexture.getHeight();
-        rect.x = screenWidth / 2 - rect.w / 2;
-        rect.y = screenHeight / 2 - rect.h / 2 - 200;
-        controlTexture.render(&rect, renderer);
-        okButton.setCenterPos(screenWidth - 150, screenHeight - 50);
-        okButton.render(renderer);
+        renderHelp();
         break;
     case PLAY_MODE:
-        backgroundTexture.render(NULL, renderer);
-        tetris.render(renderer);
-        tmp = tetris.getNextPos();
-        pauseButton.setCenterPos(tmp.x + 4 * BLOCK_SIZE, tmp.y + 13 * BLOCK_SIZE);
-        pauseButton.render(renderer);
-        soundButton[soundMode].setCenterPos(tmp.x + 4 * BLOCK_SIZE, tmp.y + 16 * BLOCK_SIZE);
-        soundButton[soundMode].render(renderer);
+        renderPlay();
         break;
     case PAUSE_MODE:
-        backgroundTexture.render(NULL, renderer);
-        tetris.render(renderer);
-        rect.w = buttonBackgroundTexture.getWidth();
-        rect.h = buttonBackgroundTexture.getHeight();
-        rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
-        rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 2;
-        buttonBackgroundTexture.render(&rect, renderer);
-        rect.w = pauseTexture.getWidth();
-        rect.h = pauseTexture.getHeight();
-        rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
-        rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 3;
-        pauseTexture.render(&rect, renderer);
-        resumeButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 6);
-        resumeButton.render(renderer);
-        soundButton[soundMode].setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 8);
-        soundButton[soundMode].render(renderer);
-        quitButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 10);
-        quitButton.render(renderer);
+        renderPause();
         break;
     case QUIT_GAME_MODE:
-        backgroundTexture.render(NULL, renderer);
-        tetris.render(renderer);
-        rect.w = buttonBackgroundTexture.getWidth();
-        rect.h = buttonBackgroundTexture.getHeight();
-        rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
-        rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 2;
-        buttonBackgroundTexture.render(&rect, renderer);
-        rect.w = quitGameTexture.getWidth();
-        rect.h = quitGameTexture.getHeight();
-        rect.x = tetris.getMAapPos().x + BLOCK_SIZE * 6 - rect.w / 2;
-        rect.y = tetris.getMAapPos().y + BLOCK_SIZE * 3;
-        quitGameTexture.render(&rect, renderer);
-        okButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 6);
-        okButton.render(renderer);
-        cancelButton.setCenterPos(tetris.getMAapPos().x + BLOCK_SIZE * 6, tetris.getMAapPos().y + BLOCK_SIZE * 9);
-        cancelButton.render(renderer);
+        renderQuit();
         break;
     case GAME_OVER_MODE:
-        backgroundTexture.render(NULL, renderer);
-        tetris.textCenterRender("GAME OVER", 72, createColor(255, 0, 0, 0), renderer, 0, screenWidth, 100);
-        tetris.textCenterRender("Score: " + to_string(tetris.getScore()), 36, createColor(255, 255, 0, 0), renderer, 0, screenWidth, 200);
-        tetris.textCenterRender("Lines: " + to_string(tetris.getClearLines()), 36, createColor(255, 255, 0, 0), renderer, 0, screenWidth, 300);
-        replayButton.render(renderer);
-        homeButton.render(renderer);
+        renderGameOver();
         break;
     default:
         break;
@@ -191,6 +224,111 @@ void Controller::updateSound()
     }
 }
 
+void Controller::handleEventMenu(SDL_Event event)
+{
+    if (playButton.handleEvent(event))
+    {
+        setGameMode(PLAY_MODE);
+        tetris.initGame(200, 10, level + 1);
+    }
+    if (helpButton.handleEvent(event))
+    {
+        setGameMode(HELP_MODE);
+    }
+    if (quitButton.handleEvent(event))
+    {
+        setGameMode(QUIT_MODE);
+    }
+    if (levelButton[level].handleEvent(event))
+    {
+        level = (level + 1) % 5;
+    }
+    if (soundButton[soundMode].handleEvent(event))
+    {
+        updateSound();
+    }
+}
+
+void Controller::handleEventHelp(SDL_Event event)
+{
+    if (okButton.handleEvent(event))
+    {
+        setGameMode(MAIN_MENU_MODE);
+    }
+}
+
+void Controller::handleEventPlay(SDL_Event event)
+{
+    tetris.handleEvent(event);
+    if (tetris.getGameStatus() == GAME_PAUSE)
+    {
+        setGameMode(PAUSE_MODE);
+    }
+    if (tetris.getGameStatus() == GAME_OVER)
+    {
+        setGameMode(GAME_OVER_MODE);
+    }
+    if (pauseButton.handleEvent(event))
+    {
+        setGameMode(PAUSE_MODE);
+    }
+    if (soundButton[soundMode].handleEvent(event))
+    {
+        updateSound();
+    }
+}
+
+void Controller::handleEventQuit(SDL_Event event)
+{
+    if (okButton.handleEvent(event))
+    {
+        setGameMode(MAIN_MENU_MODE);
+    }
+    if (cancelButton.handleEvent(event))
+    {
+        setGameMode(PAUSE_MODE);
+    }
+}
+
+void Controller::handleEventPause(SDL_Event event)
+{
+    if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
+    {
+        setGameMode(PLAY_MODE);
+        tetris.setGameStatus(GAME_PLAY);
+    }
+    if (resumeButton.handleEvent(event))
+    {
+        setGameMode(PLAY_MODE);
+        tetris.setGameStatus(GAME_PLAY);
+    }
+    if (soundButton[soundMode].handleEvent(event))
+    {
+        updateSound();
+    }
+    if (helpButton.handleEvent(event))
+    {
+        setGameMode(HELP_MODE);
+    }
+    if (quitButton.handleEvent(event))
+    {
+        setGameMode(QUIT_GAME_MODE);
+    }
+}
+
+void Controller::handleEventGameOver(SDL_Event event)
+{
+    if (replayButton.handleEvent(event))
+    {
+        setGameMode(PLAY_MODE);
+        tetris.initGame(200, 10, level + 1);
+    }
+    if (homeButton.handleEvent(event))
+    {
+        setGameMode(MAIN_MENU_MODE);
+    }
+}
+
 void Controller::handleEvent()
 {
     SDL_Event event;
@@ -204,98 +342,22 @@ void Controller::handleEvent()
     switch (gameMode)
     {
     case MAIN_MENU_MODE:
-        if (playButton.handleEvent(event))
-        {
-            setGameMode(PLAY_MODE);
-            tetris.initGame(200, 10, level + 1);
-        }
-        if (helpButton.handleEvent(event))
-        {
-            setGameMode(HELP_MODE);
-        }
-        if (quitButton.handleEvent(event))
-        {
-            setGameMode(QUIT_MODE);
-        }
-        if (levelButton[level].handleEvent(event))
-        {
-            level = (level + 1) % 5;
-        }
-        if (soundButton[soundMode].handleEvent(event))
-        {
-            updateSound();
-            break;
-        }
+        handleEventMenu(event);
         break;
     case HELP_MODE:
-        if (okButton.handleEvent(event))
-        {
-            setGameMode(MAIN_MENU_MODE);
-        }
+        handleEventHelp(event);
         break;
     case PLAY_MODE:
-        tetris.handleEvent(event);
-        if (tetris.getGameStatus() == GAME_PAUSE)
-        {
-            setGameMode(PAUSE_MODE);
-        }
-        if (tetris.getGameStatus() == GAME_OVER)
-        {
-            setGameMode(GAME_OVER_MODE);
-        }
-        if (pauseButton.handleEvent(event))
-        {
-            setGameMode(PAUSE_MODE);
-        }
-        if (soundButton[soundMode].handleEvent(event))
-        {
-            updateSound();
-        }
+        handleEventPlay(event);
         break;
     case PAUSE_MODE:
-        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-        {
-            setGameMode(PLAY_MODE);
-            tetris.setGameStatus(GAME_PLAY);
-        }
-        if (resumeButton.handleEvent(event))
-        {
-            setGameMode(PLAY_MODE);
-            tetris.setGameStatus(GAME_PLAY);
-        }
-        if (soundButton[soundMode].handleEvent(event))
-        {
-            updateSound();
-        }
-        if (helpButton.handleEvent(event))
-        {
-            setGameMode(HELP_MODE);
-        }
-        if (quitButton.handleEvent(event))
-        {
-            setGameMode(QUIT_GAME_MODE);
-        }
+        handleEventPause(event);
         break;
     case GAME_OVER_MODE:
-        if (replayButton.handleEvent(event))
-        {
-            setGameMode(PLAY_MODE);
-            tetris.initGame(200, 10, level + 1);
-        }
-        if (homeButton.handleEvent(event))
-        {
-            setGameMode(MAIN_MENU_MODE);
-        }
+        handleEventGameOver(event);
         break;
     case QUIT_GAME_MODE:
-        if (okButton.handleEvent(event))
-        {
-            setGameMode(MAIN_MENU_MODE);
-        }
-        if (cancelButton.handleEvent(event))
-        {
-            setGameMode(PAUSE_MODE);
-        }
+        handleEventQuit(event);
         break;
     default:
         break;

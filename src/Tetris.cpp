@@ -184,9 +184,8 @@ void Tetris::renderScoreTable(SDL_Renderer *renderer)
     textCenterRender(to_string(level), 32, createColor(255, 255, 0, 0), renderer, holdPos.x, BLOCK_SIZE * 8, holdPos.y + BLOCK_SIZE * 9 + 65 + 102 * 2);
 }
 
-void Tetris::render(SDL_Renderer *renderer)
+void Tetris::renderMap(SDL_Renderer *renderer)
 {
-    renderBoard(renderer, hold, HOLD_HEIGHT, HOLD_WIDTH);
     for (int i = 0; i < MAP_HEIGHT; i++)
     {
         for (int j = 0; j < MAP_WIDTH; j++)
@@ -215,67 +214,84 @@ void Tetris::render(SDL_Renderer *renderer)
             clearLines();
         }
     }
-    renderBoard(renderer, nex, NEXT_HEIGHT, NEXT_WIDTH);
-    renderScoreTable(renderer);
-    Tetromino border = getShadowTetromino(currentTetromino);
-    if (renderStatus == RENDER_NORMAL || renderStatus == RENDER_CLEAR_LINE)
+}
+
+void Tetris::renderDropTetromino(SDL_Renderer *renderer)
+{
+    Tetromino shadowTetromino = getShadowTetromino(currentTetromino);
+    if (currentTetromino.getScreenPos().y == shadowTetromino.getScreenPos().y)
     {
-        border.render(renderer, "BORDER");
-        currentTetromino.render(renderer, "SOLID");
+        delayRender = 7;
+        renderStatus = RENDER_PUTDOWN_TETROMINO;
     }
-    else if (renderStatus == RENDER_DROP_TETROMINO)
+    else
     {
-        if (currentTetromino.getScreenPos().y == border.getScreenPos().y)
+        if (delayRender > shadowTetromino.getScreenPos().y)
         {
             delayRender = 7;
             renderStatus = RENDER_PUTDOWN_TETROMINO;
         }
         else
         {
-            if (delayRender > border.getScreenPos().y)
+            int step = 255 / 12;
+            Tetromino tmp = currentTetromino;
+            tmp.setScreenPos(tmp.getScreenPos().x, delayRender);
+            blockAlpha = 255 - step * min((shadowTetromino.getScreenPos().y - delayRender) / (BLOCK_SIZE / 4), 12);
+            for (int i = 0; i < 12 && tmp.getScreenPos().y <= shadowTetromino.getScreenPos().y; i++)
             {
-                delayRender = 7;
-                renderStatus = RENDER_PUTDOWN_TETROMINO;
-            }
-            else
-            {
-                int step = 255 / 12;
-                Tetromino tmp = currentTetromino;
-                tmp.setScreenPos(tmp.getScreenPos().x, delayRender);
-                blockAlpha = 255 - step * min((border.getScreenPos().y - delayRender) / (BLOCK_SIZE / 4), 12);
-                for (int i = 0; i < 12 && tmp.getScreenPos().y <= border.getScreenPos().y; i++)
+                if (tmp.getScreenPos().y >= currentTetromino.getScreenPos().y)
                 {
-                    if (tmp.getScreenPos().y >= currentTetromino.getScreenPos().y)
-                    {
-                        tmp.setAlpha(blockAlpha);
-                        tmp.render(renderer, "SOLID");
-                        tmp.setAlpha(255);
-                    }
-                    tmp.setScreenPos(tmp.getScreenPos().x, tmp.getScreenPos().y + (BLOCK_SIZE / 2));
-                    blockAlpha += step;
+                    tmp.setAlpha(blockAlpha);
+                    tmp.render(renderer, "SOLID");
+                    tmp.setAlpha(255);
                 }
-                delayRender += BLOCK_SIZE / 2;
+                tmp.setScreenPos(tmp.getScreenPos().x, tmp.getScreenPos().y + (BLOCK_SIZE / 2));
+                blockAlpha += step;
             }
+            delayRender += BLOCK_SIZE / 2;
         }
+    }
+}
+
+void Tetris::renderPutdownTetromino(SDL_Renderer *renderer)
+{
+    blockAlpha = 255 - 32 * delayRender;
+    currentTetromino = getShadowTetromino(currentTetromino);
+    currentTetromino.setAlpha(blockAlpha);
+    currentTetromino.render(renderer, "SOLID");
+    currentTetromino.setAlpha(255);
+    if (delayRender == 0)
+    {
+        putDownTetromino(currentTetromino);
+        checkClearLines();
+        updateScore();
+        renderStatus = (linesClear == 0 ? RENDER_NORMAL : RENDER_CLEAR_LINE);
+        setNextTetromino();
     }
     else
     {
-        blockAlpha = 255 - 32 * delayRender;
-        border.setAlpha(blockAlpha);
-        border.render(renderer, "SOLID");
-        border.setAlpha(255);
-        if (delayRender == 0)
-        {
-            putDownTetromino(border);
-            checkClearLines();
-            updateScore();
-            renderStatus = (linesClear == 0 ? RENDER_NORMAL : RENDER_CLEAR_LINE);
-            setNextTetromino();
-        }
-        else
-        {
-            delayRender--;
-        }
+        delayRender--;
+    }
+}
+
+void Tetris::render(SDL_Renderer *renderer)
+{
+    renderBoard(renderer, hold, HOLD_HEIGHT, HOLD_WIDTH);
+    renderMap(renderer);
+    renderBoard(renderer, nex, NEXT_HEIGHT, NEXT_WIDTH);
+    renderScoreTable(renderer);
+    if (renderStatus == RENDER_NORMAL || renderStatus == RENDER_CLEAR_LINE)
+    {
+        getShadowTetromino(currentTetromino).render(renderer, "BORDER");
+        currentTetromino.render(renderer, "SOLID");
+    }
+    else if (renderStatus == RENDER_DROP_TETROMINO)
+    {
+        renderDropTetromino(renderer);
+    }
+    else
+    {
+        renderPutdownTetromino(renderer);
     }
     holdTetromino.render(renderer, "SOLID");
     for (int i = 0; i < 3; i++)
@@ -387,7 +403,6 @@ void Tetris::clearLines()
         numLinesInLevel -= LINES_BEFORE_LEVEL_INCREASES[level];
         level++;
     }
-
     updateMap();
 }
 
@@ -407,6 +422,7 @@ void Tetris::setNextTetromino()
     {
         nextTetromino[i].setScreenPos(nexPos.x + BLOCK_SIZE + (nextTetromino[i].getTetrominoType() == BLOCK_TYPE_O ? 2 : 1) * BLOCK_SIZE, nexPos.y + (2 + (2 - i) * 3) * BLOCK_SIZE);
     }
+    lastRotate = false;
     if (!checkCorrectTetromino(currentTetromino))
     {
         gameStatus = GAME_OVER;
@@ -503,21 +519,14 @@ void Tetris::checkTSpin(Tetromino tetromino)
     }
     int cnt = 0;
     int x = tetromino.getMapPos().x, y = tetromino.getMapPos().y;
-    if (map[x][y].getBlockType() != BLOCK_TYPE_EMPTY)
+    static const int testX[4] = {0, 0, 2, 2};
+    static const int testY[4] = {0, 2, 0, 2};
+    for (int i = 0; i < 4; i++)
     {
-        cnt++;
-    }
-    if (map[x + 2][y].getBlockType() != BLOCK_TYPE_EMPTY)
-    {
-        cnt++;
-    }
-    if (map[x][y + 2].getBlockType() != BLOCK_TYPE_EMPTY)
-    {
-        cnt++;
-    }
-    if (map[x + 2][y + 2].getBlockType() != BLOCK_TYPE_EMPTY)
-    {
-        cnt++;
+        if (map[x + testX[i]][y + testY[i]].getBlockType() != BLOCK_TYPE_EMPTY)
+        {
+            cnt++;
+        }
     }
     if (cnt >= 3)
     {
@@ -576,6 +585,32 @@ int Tetris::getClearLines()
     return lines;
 }
 
+void Tetris::setHoldTetromino()
+{
+    if (swapHold == false)
+    {
+        if (holdEmpty)
+        {
+            holdEmpty = false;
+            holdTetromino = currentTetromino;
+            setNextTetromino();
+        }
+        else
+        {
+            swap(holdTetromino, currentTetromino);
+        }
+        currentTetromino.setMapPos(1, MAP_WIDTH / 2 - 1 - (currentTetromino.getTetrominoType() == BLOCK_TYPE_O ? 0 : 1));
+        currentTetromino.setScreenPos(mapPos.x + currentTetromino.getMapPos().y * BLOCK_SIZE, mapPos.y + currentTetromino.getMapPos().x * BLOCK_SIZE);
+        while (holdTetromino.getRotateDirect() != 0)
+        {
+            holdTetromino.clockwiseRotate();
+        }
+        holdTetromino.setScreenPos(holdPos.x + BLOCK_SIZE * (holdTetromino.getTetrominoType() == BLOCK_TYPE_O ? 3 : 2), holdPos.y + BLOCK_SIZE * 2);
+        swapHold = true;
+        delayFrame = FRAMES_PER_GIRDCELL[level];
+    }
+}
+
 void Tetris::handleEvent(SDL_Event event)
 {
     if (renderStatus != RENDER_NORMAL)
@@ -584,84 +619,63 @@ void Tetris::handleEvent(SDL_Event event)
     }
     moveDownTetromino();
     Tetromino tempTetromino = currentTetromino;
-    bool moveDown = false;
     if (event.type == SDL_KEYDOWN)
     {
         switch (event.key.keysym.sym)
         {
         case SDLK_UP:
         case SDLK_w:
-            tempTetromino = rotate(tempTetromino, 1);
+            currentTetromino = rotate(currentTetromino, 1);
             break;
         case SDLK_z:
-            tempTetromino = rotate(tempTetromino, -1);
+            currentTetromino = rotate(currentTetromino, -1);
             break;
         case SDLK_DOWN:
         case SDLK_s:
             tempTetromino.moveDown();
-            moveDown = true;
             delayFrame = FRAMES_PER_GIRDCELL[level];
             score += 1;
             lastRotate = false;
+            if (checkCorrectTetromino(tempTetromino))
+            {
+                currentTetromino = tempTetromino;
+            }
+            else
+            {
+                renderStatus = RENDER_PUTDOWN_TETROMINO;
+            }
             break;
         case SDLK_LEFT:
         case SDLK_a:
             tempTetromino.moveLeft();
+            if (checkCorrectTetromino(tempTetromino))
+            {
+                currentTetromino = tempTetromino;
+            }
             lastRotate = false;
             break;
         case SDLK_RIGHT:
         case SDLK_d:
             tempTetromino.moveRight();
+            if (checkCorrectTetromino(tempTetromino))
+            {
+                currentTetromino = tempTetromino;
+            }
             lastRotate = false;
             break;
         case SDLK_SPACE:
             tempTetromino = getShadowTetromino(tempTetromino);
-            moveDown = true;
             renderStatus = RENDER_DROP_TETROMINO;
             delayRender = currentTetromino.getScreenPos().y - (BLOCK_SIZE / 2) * 11;
             score += (tempTetromino.getMapPos().x - currentTetromino.getMapPos().x) * 2;
             break;
         case SDLK_c:
-            if (swapHold == false)
-            {
-                if (holdEmpty)
-                {
-                    holdEmpty = false;
-                    holdTetromino = currentTetromino;
-                    setNextTetromino();
-                    tempTetromino = currentTetromino;
-                }
-                else
-                {
-                    swap(holdTetromino, tempTetromino);
-                }
-                tempTetromino.setMapPos(1, MAP_WIDTH / 2 - 1 - (tempTetromino.getTetrominoType() == BLOCK_TYPE_O ? 0 : 1));
-                tempTetromino.setScreenPos(mapPos.x + tempTetromino.getMapPos().y * BLOCK_SIZE, mapPos.y + tempTetromino.getMapPos().x * BLOCK_SIZE);
-                while (holdTetromino.getRotateDirect() != 0)
-                {
-                    holdTetromino.clockwiseRotate();
-                }
-                holdTetromino.setScreenPos(holdPos.x + BLOCK_SIZE * (holdTetromino.getTetrominoType() == BLOCK_TYPE_O ? 3 : 2), holdPos.y + BLOCK_SIZE * 2);
-                swapHold = true;
-                delayFrame = FRAMES_PER_GIRDCELL[level];
-            }
+            setHoldTetromino();
             break;
         case SDLK_ESCAPE:
             gameStatus = GAME_PAUSE;
             break;
         }
-    }
-    if (renderStatus != RENDER_NORMAL)
-    {
-        return;
-    }
-    if (checkCorrectTetromino(tempTetromino))
-    {
-        currentTetromino = tempTetromino;
-    }
-    else if (moveDown == true)
-    {
-        renderStatus = RENDER_PUTDOWN_TETROMINO;
     }
 }
 
